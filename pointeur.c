@@ -1,17 +1,7 @@
 #include <stdio.h>
 #include <string.h>
-#include <stdlib.h>
 
 #include "swap.h"
-
-/*
-void copy (char* a, char* b, size_t len) {
-	// copy a to b
-	// a and b must be the same size
-	for (int i=0; i<len; i++)
-		b[i] = a[i];
-}
-*/
 
 int main () {
 	char* a = "42";

@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 void swap_int (int* a, int* b) {
@@ -17,7 +16,7 @@ void swap_char(char** a, char** b) {
 		return;
 	}
 
-	char* temp = (char *) malloc(len_a);
+	char* temp;
 	temp = *a;
 	*a = *b;
 	*b = temp;
