@@ -1,4 +1,6 @@
 run/*
 *.o
 pointeur
+serveur
+client
 
