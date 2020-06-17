@@ -4,7 +4,7 @@ LDFLAGS = -L. -lm
 
 all: client
 
-client: client.o socket.c
+client: client.o
 	$(CC) -o client $^ $(LDFLAGS)
 
 %.o: %.c

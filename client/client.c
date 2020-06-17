@@ -11,8 +11,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
-#include "socket.h"
-
 #define LG_BUFFER 1024
 
 int lecture_arguments	(int argc, char * argv [],
