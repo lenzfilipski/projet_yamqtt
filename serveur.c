@@ -47,14 +47,14 @@ void traite_connexion (int sock) {
 	write(sock, buffer, strlen(buffer));
 	*/
 	int	nb_lus;
+	/*
 	nb_lus = read(sock, buffer, LG_BUFFER);
 	write(STDOUT_FILENO, buffer, nb_lus);
 	sprintf(buffer, "Bonjour");
 	write(sock, buffer, strlen(buffer));
+	*/
 
 	// Écanges serveur <=> client
-	/*
-	int nb_lus;
 	while (1) {	
 		if ((nb_lus = read(sock, buffer, LG_BUFFER)) == 0) {
 			break;
@@ -64,8 +64,9 @@ void traite_connexion (int sock) {
 			exit(EXIT_FAILURE);
 		}
 		write(STDOUT_FILENO, buffer, nb_lus);
+		write(sock, buffer, nb_lus);
+		printf("\n");
 	}
-	*/
 	close(sock);
 }
 

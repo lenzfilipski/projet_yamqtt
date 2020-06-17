@@ -40,10 +40,12 @@ int main (int argc, char *argv[]) {
 		exit(EXIT_FAILURE);
 	}
 	setvbuf(stdout, NULL, _IONBF, 0);
-	sprintf(buffer, "coucou");
-	write(sock, buffer, strlen(buffer));
+	//sprintf(buffer, "coucou");
+	//write(sock, buffer, strlen(buffer));
 
 	while (1) {
+		scanf("%s", buffer);
+		write(sock, buffer, strlen(buffer));
 		if ((nb_lus = read(sock, buffer, LG_BUFFER)) == 0)
 			break;
 		if (nb_lus < 0) {
@@ -52,6 +54,7 @@ int main (int argc, char *argv[]) {
 		}
 		write(STDOUT_FILENO, buffer, nb_lus);
 		// Interprétation du message reçu
+		printf("\n");
 
 	}
 
