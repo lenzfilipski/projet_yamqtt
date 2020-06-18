@@ -17,7 +17,7 @@
 
 int serveur_tcp				(const short port);
 int quitter_le_serveur		(void);
-void traite_connexion		(int sock);
+void traite_connexion		(int sock, int clients[], int nb_clients);
 
 
 // Serveur
@@ -25,37 +25,12 @@ int main () {
 	return serveur_tcp(1884);
 }
 
-void traite_connexion (int sock) {
-	struct sockaddr_in	adresse;
-	socklen_t			longueur;
+void traite_connexion (int sock, int clients[], int nb_clients) {
 	char				buffer[256];
 
-	longueur = sizeof(struct sockaddr_in);
-	if (getpeername(sock,(struct sockaddr *)& adresse,& longueur) < 0) {
-		perror("getpeername");
-		return;
-	}
-
-	/*
-	sprintf(buffer, "IP = %s, Port = %u \n",
-			inet_ntoa(adresse.sin_addr),
-			ntohs(adresse.sin_port));
-	fprintf(stdout, "Connexion : locale ");
-	affiche_adresse_socket(sock);
-	fprintf(stdout, " distante %s", buffer);
-	write(sock, "Votre adresse : ", 16);
-	write(sock, buffer, strlen(buffer));
-	*/
 	int	nb_lus;
-	/*
-	nb_lus = read(sock, buffer, LG_BUFFER);
-	write(STDOUT_FILENO, buffer, nb_lus);
-	sprintf(buffer, "Bonjour");
-	write(sock, buffer, strlen(buffer));
-	*/
-
 	// Écanges serveur <=> client
-	while (1) {	
+	while (1) {
 		if ((nb_lus = read(sock, buffer, LG_BUFFER)) == 0) {
 			break;
 		}
@@ -63,6 +38,15 @@ void traite_connexion (int sock) {
 			perror("read");
 			exit(EXIT_FAILURE);
 		}
+
+		if (!strcmp(buffer, "coucou")) {
+			for (int i=0; i<nb_clients; i++) {
+				if (clients[i] != sock)
+					write(clients[i], "Bonjour", strlen("Bonjour"));
+			}
+		}
+		if (!strcmp(buffer, ""))
+			continue;
 		write(STDOUT_FILENO, buffer, nb_lus);
 		write(sock, buffer, nb_lus);
 		printf("\n");
@@ -75,6 +59,9 @@ int serveur_tcp (const short port) {
 	int sock_connectee;
 	struct sockaddr_in adresse;
 	socklen_t longueur;
+	
+	// Liste des clients
+	int clients[10], nb_clients = 0;
 
 	sock_contact = create_socket(NULL, port );
 	if (sock_contact < 0)
@@ -83,6 +70,7 @@ int serveur_tcp (const short port) {
 	fprintf(stdout, "Mon adresse >> ");
 	affiche_adresse_socket(sock_contact);
 	while (! quitter_le_serveur()) {
+
 		longueur = sizeof(struct sockaddr_in);
 		sock_connectee = accept(sock_contact,
 				(struct sockaddr *)& adresse, & longueur);
@@ -90,16 +78,19 @@ int serveur_tcp (const short port) {
 			perror("accept");
 			return -1;
 		}
+		clients[nb_clients++] = sock_connectee;
+
 		switch (fork()) {
 			case 0 : /* fils */
 				close(sock_contact);
-				traite_connexion(sock_connectee);
+				traite_connexion(sock_connectee, clients, nb_clients);
 				exit(EXIT_SUCCESS);
 			case -1:
 				perror("fork");
 				return -1;
 			default : /* père */
 				close(sock_connectee);
+				nb_clients--;
 		}
 	}
 	return 0;
