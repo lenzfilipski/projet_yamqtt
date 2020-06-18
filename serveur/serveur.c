@@ -1,15 +1,10 @@
 #include <stdio.h>
-#include <unistd.h>
-
 #include <stdlib.h> 
 #include <string.h> 
 
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <netinet/in.h> 
-
-#include <sys/types.h>
 #include <sys/socket.h>
+#include <unistd.h>
+#include <arpa/inet.h>
 
 #include <pthread.h>
 
@@ -17,87 +12,75 @@
 
 #define LG_BUFFER 1024
 
+void *traite_connexion		(void * sock);
 int serveur_tcp				(const short port);
 int quitter_le_serveur		(void);
-void *traite_connexion		(int sock);
 
 //
 pthread_mutex_t mutex;
-int clients_socek_list[10] ; 
-int clients_enabled[10] ;
+int clients_socket_list[10] ; 
 int nb_clients = 0;
 
 
 // Serveur
 int main () {
-	return serveur_tcp(1885);
+	return serveur_tcp(1884);
 }
 
 
 void send_message_to_all (char *msg, int sender) {
-
 	pthread_mutex_lock(&mutex);
 
 	for (int i=0; i<nb_clients; i++) {
-		if ((clients_socek_list[i] != sender)&&(clients_enabled[i] == 1))
-			write(clients_socek_list[i], "Bonjour", strlen("Bonjour"));
+		if (clients_socket_list[i] != sender)
+			write(clients_socket_list[i], "Bonjour", strlen("Bonjour"));
 	}
 	
 	pthread_mutex_unlock(&mutex);
 }
 
-void *traite_connexion (int sock) {
-	char buffer[256];
+void *traite_connexion (void *t_sock) {
+	int sock = *(int *)t_sock;
+	char buffer[LG_BUFFER];
 	int	len_in;
 	// Écanges serveur <=> client
-	while ((len_in = read(sock, buffer, LG_BUFFER)) == 0) {
-		/*
-		if (len_in < 0) {
-			perror("read");
-			exit(EXIT_FAILURE);
-		}
-		*/
-
+	while ((len_in = read(sock, buffer, LG_BUFFER)) > 0) {
 		if (!strcmp(buffer, "coucou")) {
 			send_message_to_all(buffer, sock);
 		}
-		//if (!strcmp(buffer, ""))
-		//	continue;
 		write(STDOUT_FILENO, buffer, len_in);
-		write(sock, buffer, len_in);
 		printf("\n");
+		//write(sock, buffer, len_in);
+	}
+	if (len_in < 0) {
+		perror("read");
+		exit(EXIT_FAILURE);
 	}
 	close(sock);
 
-	for (int i=0; i<nb_clients; i++) {
-			if (clients_enabled[i] == sock)
-				clients_enabled[i] = 0;
-	}
-	return 0;
+	// TODO: traiter les clients qui quittent
+	//
+	// TODO: regler le broblème de double bonjour
+	return NULL;
 }
 
 int serveur_tcp (const short port) {
-	int sock_contact;
-	int nouveau_socket;
-	struct sockaddr_in adresse;
-	socklen_t longueur;
-
+	int main_socket;
+	int sub_socket;
+	struct sockaddr_in address;
 	pthread_t recvt;
-	
-	sock_contact = create_socket(NULL, port );
-	if (sock_contact < 0)
+
+	if ((main_socket = create_main_socket(port )) < 0) {
+		perror("socket create");
 		return -1;
-	// Crée une liste d'attente 
-	listen(sock_contact, 5);
+	}
 	fprintf(stdout, "Mon adresse >> ");
-	affiche_adresse_socket(sock_contact);
+	affiche_adresse_socket(main_socket);
 
 	while (! quitter_le_serveur()) {
-
 		// Crée un nouveau socket pour le premier client de la liste d'attente
-		longueur = sizeof(struct sockaddr_in);
-		nouveau_socket = accept(sock_contact, (struct sockaddr *)& adresse, & longueur);
-		if (nouveau_socket < 0) {
+		socklen_t saddr_len = sizeof(struct sockaddr_in);
+		if ((sub_socket = accept(main_socket, (struct sockaddr *) &address, &saddr_len)) < 0) {
 			perror("accept");
 			return -1;
 		}
@@ -106,30 +89,15 @@ int serveur_tcp (const short port) {
 		pthread_mutex_lock(&mutex);
 
 		// Ajoute le nouveau socket à la liste des sockets clients
-		clients_enabled[nb_clients] = 1 ;
-		clients_socek_list[nb_clients++] = nouveau_socket;
+		clients_socket_list[nb_clients++] = sub_socket;
+
+		int *t_socket = malloc(sizeof(int *));
+		*t_socket = sub_socket;
 
 		// creating a thread for each client 
-		pthread_create(&recvt, NULL, (void *) traite_connexion, &nouveau_socket);
+		pthread_create(&recvt, NULL, traite_connexion, (void *) t_socket);
 
 		pthread_mutex_unlock(&mutex);
-
-
-		/*
-		switch (fork()) {
-			case 0 :
-				close(sock_contact);
-				traite_connexion(sock_connectee, clients, clients_enabled, nb_clients);
-				exit(EXIT_SUCCESS);
-			case -1:
-				perror("fork");
-				return -1;
-			default :
-				close(sock_connectee);
-		}
-		*/
-
-
 	}
 	return 0;
 }

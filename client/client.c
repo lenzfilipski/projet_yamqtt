@@ -1,30 +1,31 @@
 #include <stdio.h>
-#include <unistd.h>
-
 #include <stdlib.h> 
 #include <string.h> 
 
+#include <sys/socket.h>
+#include <unistd.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-#include <netinet/in.h> 
 
-#include <sys/types.h>
-#include <sys/socket.h>
+// threads pour écouter et envoyer en parallèle
+#include <pthread.h>
 
 #define LG_BUFFER 1024
 
 int lecture_arguments	(int argc, char * argv [],
 						struct sockaddr_in * adresse,
 						char * protocole);
-
+void *handle_in_msg		(void *t_sock);
 
 // Client
 int main (int argc, char *argv[]) {
 
-	int	sock;
+	int		sock;
 	struct	sockaddr_in adresse;
 	char	buffer[LG_BUFFER];
-	int		nb_lus;
+	
+	pthread_t listen;
+
 	if (lecture_arguments(argc, argv, & adresse, "tcp") < 0)
 		exit(EXIT_FAILURE);
 	adresse.sin_family = AF_INET;
@@ -38,27 +39,30 @@ int main (int argc, char *argv[]) {
 		exit(EXIT_FAILURE);
 	}
 	setvbuf(stdout, NULL, _IONBF, 0);
-	//sprintf(buffer, "coucou");
-	//write(sock, buffer, strlen(buffer));
+
+	int *t_sock = malloc(sizeof(int *));
+	*t_sock = sock;
+	pthread_create(&listen, NULL, handle_in_msg, (void *) t_sock);
 
 	while (1) {
 		scanf("%s", buffer);
 		write(sock, buffer, strlen(buffer));
-		if ((nb_lus = read(sock, buffer, LG_BUFFER)) == 0)
-			break;
-		if (nb_lus < 0) {
-			perror("read");
-			exit(EXIT_FAILURE);
-		}
-		write(STDOUT_FILENO, buffer, nb_lus);
-
-		// Interprétation du message reçu
-		printf("\n");
-
 	}
 
 	return EXIT_SUCCESS;
 	//return 0;
+}
+
+void *handle_in_msg (void *t_sock) {
+	int sock = *(int *) t_sock;
+	char buffer[LG_BUFFER];
+	int len_in;
+	while ((len_in = read(sock, buffer, LG_BUFFER)) > 0) {
+		write(STDOUT_FILENO, buffer, len_in);
+		printf("\n");
+	}
+
+	return NULL;
 }
 
 int lecture_arguments 	(int argc, char * argv [],

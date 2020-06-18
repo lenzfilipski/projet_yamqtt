@@ -11,7 +11,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
-int create_socket (const char* ip_addr, const short port) {
+int create_main_socket (const short port) {
 
 	int sock;
 	struct sockaddr_in adresse;
@@ -31,9 +31,9 @@ int create_socket (const char* ip_addr, const short port) {
 	adresse.sin_family = AF_INET;
 	// htons() retourne la valeur en big-endian ce qui est indispensable pour e réseau
 	adresse.sin_port = htons(port);
-	// htons pour short et htonl pour long ?
-	adresse.sin_addr.s_addr = htonl(INADDR_ANY);
-
+	// htons pour short et htonl pour long
+	// convertis ip_addr dans le bon format
+	adresse.sin_addr.s_addr = INADDR_ANY;
 	// Associe un objet addresse à un socket
 	// taille de l'objet adresse ------------------------------.
 	// objet adresse -----------.                              |
@@ -42,6 +42,10 @@ int create_socket (const char* ip_addr, const short port) {
 	if (bind(sock, (struct sockaddr *) & adresse, sizeof(struct sockaddr_in)) < 0) {
 		close(sock);
 		perror("bind");
+		return -1;
+	}
+	if (listen(sock, 5) < 0) {
+		perror("listen");
 		return -1;
 	}
 	return sock;
