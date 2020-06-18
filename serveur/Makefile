@@ -1,6 +1,6 @@
 CC	:= gcc
 CFLAGS = -g -Wall
-LDFLAGS = -L. -lm
+LDFLAGS = -L. -lm -pthread
 
 all: serveur
 
