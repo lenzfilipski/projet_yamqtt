@@ -41,7 +41,7 @@ void traite_connexion (int sock, int clients[], int nb_clients) {
 
 		if (!strcmp(buffer, "coucou")) {
 			for (int i=0; i<nb_clients; i++) {
-				if (clients[i] != sock)
+				if ((clients[i] != sock)&&(clients_enabled[i]))
 					write(clients[i], "Bonjour", strlen("Bonjour"));
 			}
 		}
@@ -52,6 +52,9 @@ void traite_connexion (int sock, int clients[], int nb_clients) {
 		printf("\n");
 	}
 	close(sock);
+
+    // TODO mettre a jour clients_enabled
+
 }
 
 int serveur_tcp (const short port) {
@@ -61,7 +64,9 @@ int serveur_tcp (const short port) {
 	socklen_t longueur;
 	
 	// Liste des clients
-	int clients[10], nb_clients = 0;
+	int clients[10] ; 
+    int clients_enabled[10] ;
+    int nb_clients = 0;
 
 	sock_contact = create_socket(NULL, port );
 	if (sock_contact < 0)
@@ -78,6 +83,7 @@ int serveur_tcp (const short port) {
 			perror("accept");
 			return -1;
 		}
+		clients_enabled[nb_clients] = 1 ;
 		clients[nb_clients++] = sock_connectee;
 
 		switch (fork()) {
