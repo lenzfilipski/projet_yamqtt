@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h> 
 #include <string.h> 
+#include <stdint.h>
 
 #include <sys/socket.h>
 #include <unistd.h>
@@ -18,7 +19,7 @@ int quitter_le_serveur		(void);
 
 //
 pthread_mutex_t mutex;
-int clients_socket_list[10] ; 
+client_t clients_list[10]; 
 int nb_clients = 0;
 
 
@@ -32,31 +33,54 @@ void send_message_to_all (char *msg, int sender) {
 	pthread_mutex_lock(&mutex);
 
 	for (int i=0; i<nb_clients; i++) {
-		if (clients_socket_list[i] != sender)
-			write(clients_socket_list[i], "Bonjour", strlen("Bonjour"));
+		if (clients_list[i].sock != sender)
+			write(clients_list[i].sock, "Bonjour", strlen("Bonjour"));
 	}
 	
 	pthread_mutex_unlock(&mutex);
 }
 
-void *traite_connexion (void *t_sock) {
-	int sock = *(int *)t_sock;
+void *traite_connexion (void *th_client_num) {
+	int client_num = *(int *)th_client_num;
+
+	client_t client = clients_list[client_num];
+
 	char buffer[LG_BUFFER];
 	int	len_in;
 	// Écanges serveur <=> client
-	while ((len_in = read(sock, buffer, LG_BUFFER)) > 0) {
-		if (!strcmp(buffer, "coucou")) {
-			send_message_to_all(buffer, sock);
+	while ((len_in = read(client.sock, buffer, LG_BUFFER)) > 0) {
+		//récupère l'action du client
+		char action = *buffer;
+
+		// Ajoute le flux demandé à la liste d'abonnements du client
+		int len_n_flux = read(client.sock, buffer, LG_BUFFER);
+		char *n_flux_char = malloc(sizeof(char) * (strlen(buffer) + 1));
+		strcpy(n_flux_char, buffer);
+		int n_flux = atoi(n_flux_char);
+		client.flux[client.count_flux] = n_flux;
+		client.count_flux++;
+
+		// Récupère les données du client
+		int len_data = read(client.sock, buffer, LG_BUFFER);
+		char *data = buffer;
+
+		printf("buff: %c, %d, %s\n", action, n_flux, data);
+
+
+
+
+		if (!strcmp(data, "coucou")) {
+			send_message_to_all(data, client.sock);
 		}
-		write(STDOUT_FILENO, buffer, len_in);
-		printf("\n");
+		//write(STDOUT_FILENO, buffer, len_in);
+		//printf("\n");
 		//write(sock, buffer, len_in);
 	}
 	if (len_in < 0) {
 		perror("read");
 		exit(EXIT_FAILURE);
 	}
-	close(sock);
+	close(client.sock);
 
 	// TODO: traiter les clients qui quittent
 	//
@@ -89,13 +113,15 @@ int serveur_tcp (const short port) {
 		pthread_mutex_lock(&mutex);
 
 		// Ajoute le nouveau socket à la liste des sockets clients
-		clients_socket_list[nb_clients++] = sub_socket;
+		clients_list[nb_clients].sock = sub_socket;
 
-		int *t_socket = malloc(sizeof(int *));
-		*t_socket = sub_socket;
+		int *th_client_num = malloc(sizeof(int *));
+		*th_client_num = nb_clients;
+
+		nb_clients++;
 
 		// creating a thread for each client 
-		pthread_create(&recvt, NULL, traite_connexion, (void *) t_socket);
+		pthread_create(&recvt, NULL, traite_connexion, (void *) th_client_num);
 
 		pthread_mutex_unlock(&mutex);
 	}

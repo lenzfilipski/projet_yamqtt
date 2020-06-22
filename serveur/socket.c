@@ -3,6 +3,7 @@
 
 #include <stdlib.h> 
 #include <string.h> 
+#include <stdint.h>
 
 #include <arpa/inet.h>
 #include <netdb.h>
@@ -10,6 +11,7 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+
 
 int create_main_socket (const short port) {
 
@@ -64,4 +66,3 @@ int affiche_adresse_socket (int sock) {
 			ntohs(adresse.sin_port));
 	return 0;
 }
-
