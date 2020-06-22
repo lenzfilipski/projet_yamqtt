@@ -28,3 +28,6 @@ Le serveur qui répond "Bonjour" à chaque coucou reçu ( et rien si ce n'est pa
 # Etape 5
 - Définir ( oui oui sur le papier ) le protocole qui sera implémenté par vos clients et serveurs. Vous donnerez le format des messages échangés, les informations transmises, le déroulement des conversations types que vous attendez. Inspirez vous de MQTT ....
 - Vous ajouterez ce document en pdf à votre projet
+
+# Etape 6 
+- Implementer, la partie de votre protocole qui correspond a l'inscription des clients sur le serveur et aux differents flux
