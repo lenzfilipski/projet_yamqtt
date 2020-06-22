@@ -16,6 +16,7 @@ int lecture_arguments	(int argc, char * argv [],
 						struct sockaddr_in * adresse,
 						char * protocole);
 void *handle_in_msg		(void *t_sock);
+void print_message		(int id_flux, char *data);
 
 // Client
 int main (int argc, char *argv[]) {
@@ -58,11 +59,41 @@ void *handle_in_msg (void *t_sock) {
 	char buffer[LG_BUFFER];
 	int len_in;
 	while ((len_in = read(sock, buffer, LG_BUFFER)) > 0) {
-		write(STDOUT_FILENO, buffer, len_in);
-		printf("\n");
+		// Récupère l'action du client
+		char action = *buffer;
+
+		// Récupère le numéro de flux
+		int len_id_flux = read(sock, buffer, LG_BUFFER);
+		int id_flux = atoi(buffer);
+
+		// Récupère les données du client
+		int len_data = read(sock, buffer, LG_BUFFER);
+		char *data = buffer;
+
+		printf("buff: %c, %d, %s\n", action, id_flux, data);
+
+		switch (action) {
+			case 'm':
+				// Gère la réception d'un message
+				print_message(id_flux, data);
+				break;
+			case 'e':
+				// TODO: Handle error message
+				break;
+			default:
+				printf("NOTHING...\n");
+				continue;
+		}
+
+		//write(STDOUT_FILENO, buffer, len_in);
+		//printf("\n");
 	}
 
 	return NULL;
+}
+
+void print_message (int id_flux, char *data) {
+	printf("[%d] >> %s\n", id_flux, data);
 }
 
 int lecture_arguments 	(int argc, char * argv [],
