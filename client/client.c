@@ -23,7 +23,6 @@ int main (int argc, char *argv[]) {
 
 	int		sock;
 	struct	sockaddr_in adresse;
-	char	buffer[LG_BUFFER];
 	
 	pthread_t listen;
 
@@ -46,7 +45,10 @@ int main (int argc, char *argv[]) {
 	pthread_create(&listen, NULL, handle_in_msg, (void *) t_sock);
 
 	while (1) {
-		scanf("%s", buffer);
+		char buffer[LG_BUFFER];
+		fgets(buffer, LG_BUFFER, stdin);
+		// supprime le caractère de fin de ligne
+		buffer[strlen(buffer)-1] = '\000';
 		write(sock, buffer, strlen(buffer));
 	}
 
@@ -63,11 +65,11 @@ void *handle_in_msg (void *t_sock) {
 		char action = *buffer;
 
 		// Récupère le numéro de flux
-		int len_id_flux = read(sock, buffer, LG_BUFFER);
+		/*int len_id_flux = */read(sock, buffer, LG_BUFFER);
 		int id_flux = atoi(buffer);
 
 		// Récupère les données du client
-		int len_data = read(sock, buffer, LG_BUFFER);
+		/*int len_data = */read(sock, buffer, LG_BUFFER);
 		char *data = buffer;
 
 		printf("buff: %c, %d, %s\n", action, id_flux, data);
