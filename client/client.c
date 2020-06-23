@@ -49,7 +49,7 @@ int main (int argc, char *argv[]) {
 		fgets(buffer, LG_BUFFER, stdin);
 		// supprime le caractère de fin de ligne
 		buffer[strlen(buffer)-1] = '\000';
-		write(sock, buffer, strlen(buffer));
+		write(sock, buffer, LG_BUFFER);
 	}
 
 	return EXIT_SUCCESS;
@@ -58,21 +58,25 @@ int main (int argc, char *argv[]) {
 
 void *handle_in_msg (void *t_sock) {
 	int sock = *(int *) t_sock;
-	char buffer[LG_BUFFER];
+	char buf_action[10];
 	int len_in;
-	while ((len_in = read(sock, buffer, LG_BUFFER)) > 0) {
+	while ((len_in = read(sock, buf_action, LG_BUFFER)) > 0) {
 		// Récupère l'action du client
-		char action = *buffer;
+		char action = *buf_action;
+		//printf("in: %c, ", action);
 
 		// Récupère le numéro de flux
-		/*int len_id_flux = */read(sock, buffer, LG_BUFFER);
-		int id_flux = atoi(buffer);
+		char buf_id_flux[50];
+		memset(buf_id_flux, '\000', 50);
+		/*int len_id_flux = */read(sock, buf_id_flux, LG_BUFFER);
+		int id_flux = atoi(buf_id_flux);
+		//printf("%d, ", id_flux);
 
 		// Récupère les données du client
-		/*int len_data = */read(sock, buffer, LG_BUFFER);
-		char *data = buffer;
-
-		printf("buff: %c, %d, %s\n", action, id_flux, data);
+		char data[LG_BUFFER];
+		memset(data, '\000', LG_BUFFER);
+		/*int len_data = */read(sock, data, LG_BUFFER);
+		//printf("%s\n", data);
 
 		switch (action) {
 			case 'm':
@@ -89,6 +93,7 @@ void *handle_in_msg (void *t_sock) {
 
 		//write(STDOUT_FILENO, buffer, len_in);
 		//printf("\n");
+		memset(buf_action,'\000', 10);
 	}
 
 	return NULL;

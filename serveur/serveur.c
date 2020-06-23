@@ -19,7 +19,7 @@ int quitter_le_serveur		(void);
 
 //
 pthread_mutex_t mutex;
-client_t clients_list[10]; 
+client_t clients_list[50]; 
 int nb_clients = 0;
 
 
@@ -40,19 +40,24 @@ void send_message_to_all (char *msg, int sender) {
 	pthread_mutex_unlock(&mutex);
 }
 
-void send_data_to_subscribed (int id_flux, char *data) {
+void send_data_to_subscribed (int id_flux, char *data, int len_data) {
 	printf("send: %d, %s\n", id_flux, data);
 	pthread_mutex_lock(&mutex);
 
 	for (int i=0; i<nb_clients; i++) {
 		for (int j=0; j<clients_list[i].count_flux; j++) {
 			if (clients_list[i].flux[j] == id_flux) {
-				write(clients_list[i].sock, "m", strlen("m"));
-				write(clients_list[i].sock, (char *)&id_flux, strlen((char *)&id_flux));
-				write(clients_list[i].sock, data, strlen(data));
+				printf("%d ", i);
+				write(clients_list[i].sock, "m", LG_BUFFER);
+				char char_id_flux[LG_BUFFER];
+				sprintf(char_id_flux, "%d", id_flux);
+				printf("%s", char_id_flux);
+				write(clients_list[i].sock, char_id_flux, LG_BUFFER);
+				write(clients_list[i].sock, data, LG_BUFFER);
 			}
 		}
 	}
+	printf("\n");
 
 	pthread_mutex_unlock(&mutex);
 }
@@ -64,38 +69,41 @@ void *traite_connexion (void *th_client_num) {
 	//client_t client = clients_list[client_num];
 
 	char buffer[LG_BUFFER];
-	int	len_in;
+	int len_in;
 	// Écanges serveur <=> client
 	while ((len_in = read(clients_list[client_num].sock, buffer, LG_BUFFER)) > 0) {
 		// Récupère l'action du client
 		char action = (char)*buffer;
 
 		// Récupère le numéro de flux
-		int len_id_flux = read(clients_list[client_num].sock, buffer, LG_BUFFER);
+		
+		memset(buffer,'\000',LG_BUFFER);
+		/*int len_id_flux = */read(clients_list[client_num].sock, buffer, LG_BUFFER);
 		int id_flux = atoi(buffer);
 
 		// Récupère les données du client
 		char data[LG_BUFFER];
+		memset(data,'\000',LG_BUFFER);
 		int len_data = read(clients_list[client_num].sock, data, LG_BUFFER);
 
-		printf(">>: %c, %d, %s\n", action, id_flux, data);
+		printf("%d >> %c, %d, %s\n", client_num, action, id_flux, data);
 
 		switch (action) {
 			case 's':
 				// Ajoute le flux demandé à la liste d'abonnements du client
-				pthread_mutex_lock(&mutex);
-
 				clients_list[client_num].flux[clients_list[client_num].count_flux] = id_flux;
 				clients_list[client_num].count_flux++;
-
-				pthread_mutex_unlock(&mutex);
 				break;
 			case 'u':
 				// Retire le flux demandé de la liste d'abonnements du client
+				for (int i=0; i<clients_list[client_num].count_flux; i++) {
+					if (clients_list[client_num].flux[i] == id_flux)
+						clients_list[client_num].flux[i] = 0;
+				}
 				break;
 			case 'p':
 				// Envoie les données à tous les abonnés du flux
-				send_data_to_subscribed(id_flux, data);
+				send_data_to_subscribed(id_flux, data, len_data);
 				break;
 			case 'd':
 				// Se déconnecte (proprement) du serveur
@@ -106,13 +114,7 @@ void *traite_connexion (void *th_client_num) {
 			default:
 				continue;
 		}
-
-		//if (!strcmp(data, "coucou")) {
-		//	send_message_to_all(data, client.sock);
-		//}
-		//write(STDOUT_FILENO, buffer, len_in);
-		//printf("\n");
-		//write(sock, buffer, len_in);
+		memset(buffer,'\000',LG_BUFFER);
 	}
 	if (len_in < 0) {
 		perror("read");

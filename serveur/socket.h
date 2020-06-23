@@ -7,6 +7,7 @@ int affiche_adresse_socket	(int sock);
 typedef struct client_t {
 	int sock;
 	int flux[100];
+	int flux_index[100];
 	int count_flux;
 } client_t;
 
