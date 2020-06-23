@@ -31,3 +31,7 @@ Le serveur qui répond "Bonjour" à chaque coucou reçu ( et rien si ce n'est pa
 
 # Etape 6 
 - Implementer, la partie de votre protocole qui correspond a l'inscription des clients sur le serveur et aux differents flux
+
+# Etape 7 
+- Implémenter le desabonnement des clients.
+- Faire en sorte que le client ( et le serveur ) soit ergonomique en utilisant des parametres sur la ligne de commande
