@@ -12,6 +12,9 @@
 
 #define LG_BUFFER 1024
 
+int mode_client = 0;
+int flux_client;
+
 int lecture_arguments	(int argc, char * argv [],
 						struct sockaddr_in * adresse,
 						char * protocole);
@@ -20,6 +23,11 @@ void print_message		(int id_flux, char *data);
 
 // Client
 int main (int argc, char *argv[]) {
+
+	for (int i=0; i<argc; i++) {
+		printf("%s, ", argv[i]);
+	}
+	printf("\n");
 
 	int		sock;
 	struct	sockaddr_in adresse;
@@ -40,20 +48,46 @@ int main (int argc, char *argv[]) {
 	}
 	setvbuf(stdout, NULL, _IONBF, 0);
 
-	int *t_sock = malloc(sizeof(int *));
-	*t_sock = sock;
-	pthread_create(&listen, NULL, handle_in_msg, (void *) t_sock);
-
-	while (1) {
-		char buffer[LG_BUFFER];
-		fgets(buffer, LG_BUFFER, stdin);
-		// supprime le caractère de fin de ligne
-		buffer[strlen(buffer)-1] = '\000';
-		write(sock, buffer, LG_BUFFER);
+	switch (mode_client) {
+		case 0:
+			{
+			int *t_sock = malloc(sizeof(int *));
+			*t_sock = sock;
+			pthread_create(&listen, NULL, handle_in_msg, (void *) t_sock);
+			while (1) {
+				char buffer[LG_BUFFER];
+				fgets(buffer, LG_BUFFER, stdin);
+				// supprime le caractère de fin de ligne
+				buffer[strlen(buffer)-1] = '\000';
+				write(sock, buffer, LG_BUFFER);
+			}
+			return EXIT_SUCCESS;
+			}
+			break;
+		case 1:
+			{
+			char buffer[LG_BUFFER];
+			int len_in;
+			while ((len_in = read(0, buffer, LG_BUFFER)) > 0) {
+				//fgets(buffer, LG_BUFFER, stdin);
+				
+				// supprime le caractère de fin de ligne
+				buffer[strlen(buffer)-1] = '\000';
+				printf("%s\n", buffer);
+				/*
+				write(sock, "p", LG_BUFFER);
+				char char_id_flux[LG_BUFFER];
+				sprintf(char_id_flux, "%d", flux_client);
+				write(sock, char_id_flux, LG_BUFFER);
+				write(sock, buffer, LG_BUFFER);
+				*/
+				memset(buffer, '\000', LG_BUFFER);
+			}
+			}
+			break;
+		default:
+			break;
 	}
-
-	return EXIT_SUCCESS;
-	//return 0;
 }
 
 void *handle_in_msg (void *t_sock) {
@@ -106,7 +140,7 @@ void print_message (int id_flux, char *data) {
 int lecture_arguments 	(int argc, char * argv [],
 						struct sockaddr_in * adresse,
 						char * protocole) {
-	char * liste_options = "a:p:h";
+	char * liste_options = "a:p:f:s:h";
 	int option;
 	char * hote = "localhost";
 	char * port = "1884";
@@ -122,6 +156,18 @@ int lecture_arguments 	(int argc, char * argv [],
 				break;
 			case 'p' :
 				port = optarg;
+				break;
+			case 'f':
+				if (mode_client == 0) {
+					mode_client = 1;
+					flux_client = atoi(optarg);
+				}
+				break;
+			case 's':
+				if (mode_client == 0) {
+					mode_client = 2;
+					flux_client = atoi(optarg);
+				}
 				break;
 			case 'h' :
 				fprintf(stderr, "Syntaxe : %s [-a adresse] [-p port] \n",
