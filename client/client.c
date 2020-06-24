@@ -21,13 +21,10 @@ int lecture_arguments	(int argc, char * argv [],
 void *handle_in_msg		(void *t_sock);
 void print_message		(int id_flux, char *data);
 
+void *mode_abonne		(void *t_sock);
+
 // Client
 int main (int argc, char *argv[]) {
-
-	for (int i=0; i<argc; i++) {
-		printf("%s, ", argv[i]);
-	}
-	printf("\n");
 
 	int		sock;
 	struct	sockaddr_in adresse;
@@ -87,12 +84,19 @@ int main (int argc, char *argv[]) {
 				//write(1, buffer, LG_BUFFER);
 				memset(buffer, '\000', LG_BUFFER);
 			}
+			write(sock, "d", LG_BUFFER);
+			write(sock, "0", LG_BUFFER);
+			write(sock, ".", LG_BUFFER);
+			close(sock);
 			}
 			break;
 		case 2:
 			// Mode abonné
 			{
-
+			int *t_sock = malloc(sizeof(int *));
+			*t_sock = sock;
+			pthread_create(&listen, NULL, mode_abonne, (void *) t_sock);
+			pthread_join(listen, NULL);
 			}
 			break;
 		default:
@@ -132,16 +136,54 @@ void *handle_in_msg (void *t_sock) {
 				break;
 			default:
 				printf("NOTHING...\n");
-				continue;
+				break;
 		}
-
-		//write(STDOUT_FILENO, buffer, len_in);
-		//printf("\n");
 		memset(buf_action,'\000', 10);
 	}
 
 	return NULL;
 }
+
+void *mode_abonne (void *t_sock) {
+	int sock = *(int *) t_sock;
+	// Abonnement au flux demandé
+	write(sock, "s", LG_BUFFER);
+	char char_id_flux[LG_BUFFER];
+	sprintf(char_id_flux, "%d", flux_client);
+	write(sock, char_id_flux, LG_BUFFER);
+	write(sock, ".", LG_BUFFER);
+	char buf_action[10];
+	int len_in;
+	while ((len_in = read(sock, buf_action, LG_BUFFER)) > 0) {
+		// Récupère l'action du client
+		char action = *buf_action;
+		// Récupère le numéro de flux
+		char buf_id_flux[50];
+		memset(buf_id_flux, '\000', 50);
+		read(sock, buf_id_flux, LG_BUFFER);
+		int id_flux = atoi(buf_id_flux);
+		// Récupère les données du client
+		char data[LG_BUFFER];
+		memset(data, '\000', LG_BUFFER);
+		read(sock, data, LG_BUFFER);
+
+		switch (action) {
+			case 'm':
+				// Gère la réception d'un message
+				printf("%s\n", data);
+				break;
+			case 'e':
+				// TODO: Handle error message
+				break;
+			default:
+				printf("NOTHING...\n");
+				break;
+		}
+		memset(buf_action,'\000', 10);
+	}
+	return NULL;
+}
+
 
 void print_message (int id_flux, char *data) {
 	printf("[%d] >> %s\n", id_flux, data);
