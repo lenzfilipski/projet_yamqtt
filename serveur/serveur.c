@@ -12,28 +12,37 @@
 #include "socket.h"
 
 #define LG_BUFFER 1024
+#define MAX_CLIENTS 50
 
 void *traite_connexion		(void * sock);
 int serveur_tcp				(const short port);
+int add_client				(int sock);
+void remove_client			(int client_num);
 int quitter_le_serveur		(void);
+int lecture_arguments		(int argc, char * argv [], short *server_port);
+
 
 //
 pthread_mutex_t mutex;
-client_t clients_list[50]; 
-int nb_clients = 0;
+client_t clients_list[MAX_CLIENTS]; 
+int clients_status[MAX_CLIENTS];
+int pos_liste_clients = 0;
 
 
 // Serveur
-int main () {
-	return serveur_tcp(1884);
+int main (int argc, char *argv[]) {
+	short server_port = 1884;
+	if (lecture_arguments(argc, argv, &server_port) < 0)
+		exit(EXIT_FAILURE);
+	return serveur_tcp(server_port);
 }
 
 
 void send_message_to_all (char *msg, int sender) {
 	pthread_mutex_lock(&mutex);
 
-	for (int i=0; i<nb_clients; i++) {
-		if (clients_list[i].sock != sender)
+	for (int i=0; i<pos_liste_clients; i++) {
+		if (clients_list[i].sock != sender && clients_status[i] != 0)
 			write(clients_list[i].sock, "Bonjour", strlen("Bonjour"));
 	}
 	
@@ -44,7 +53,7 @@ void send_data_to_subscribed (int id_flux, char *data, int len_data) {
 	printf("send: %d, %s\n", id_flux, data);
 	pthread_mutex_lock(&mutex);
 
-	for (int i=0; i<nb_clients; i++) {
+	for (int i=0; i<pos_liste_clients; i++) {
 		for (int j=0; j<clients_list[i].count_flux; j++) {
 			if (clients_list[i].flux[j] == id_flux) {
 				printf("%d ", i);
@@ -108,6 +117,7 @@ void *traite_connexion (void *th_client_num) {
 			case 'd':
 				// Se déconnecte (proprement) du serveur
 				printf("allééeeuuu\n");
+				remove_client(client_num);
 				close(clients_list[client_num].sock);
 				// TODO: cleaning stuff
 				return NULL;
@@ -116,6 +126,7 @@ void *traite_connexion (void *th_client_num) {
 		}
 		memset(buffer,'\000',LG_BUFFER);
 	}
+	remove_client(client_num);
 	if (len_in < 0) {
 		perror("read");
 		exit(EXIT_FAILURE);
@@ -153,13 +164,10 @@ int serveur_tcp (const short port) {
 		// 
 		pthread_mutex_lock(&mutex);
 
-		// Ajoute le nouveau socket à la liste des sockets clients
-		clients_list[nb_clients].sock = sub_socket;
-
 		int *th_client_num = malloc(sizeof(int *));
-		*th_client_num = nb_clients;
+		// Ajoute le nouveau socket à la liste des sockets clients
+		*th_client_num = add_client(sub_socket);
 
-		nb_clients++;
 
 		// creating a thread for each client 
 		pthread_create(&recvt, NULL, traite_connexion, (void *) th_client_num);
@@ -169,7 +177,58 @@ int serveur_tcp (const short port) {
 	return 0;
 }
 
+int add_client (int sock) {
+	int i = 0;
+	while (i<pos_liste_clients) {
+		if (clients_status[i] == 0) {
+			clients_status[i] = 1;
+			clients_list[i].sock = sock;
+			break;
+		}
+		i++;
+	}
+	if (i == pos_liste_clients) {
+		clients_status[i] = 1;
+		clients_list[i].sock = sock;
+		pos_liste_clients++;
+	}
+	return i;
+}
+
+void remove_client (int client_num) {
+	clients_status[client_num] = 0;
+	for (int i=0; i<clients_list[client_num].count_flux; i++) {
+		clients_list[client_num].flux[i] = 0;
+	}
+	printf("Removed: %d\n", client_num);
+}
+
 // Permet de gérer Ctrl+C pour quitter
 int quitter_le_serveur (void) {
+	return 0;
+}
+
+int lecture_arguments   (int argc, char * argv [], short *server_port) {
+	char * liste_options = "p:h";
+	int option;
+	char * port = "1884";
+
+	// gestion des arguments donnés au client
+	while ((option = getopt(argc, argv, liste_options)) != -1) {
+		switch (option) {
+			case 'p' :
+				port = optarg;
+				break;
+			case 'h' :
+				fprintf(stderr, "Syntaxe : %s [-p port] \n",
+						argv[0]);
+				return -1;
+			default :
+				break;
+		}
+	}
+	
+	*server_port = (short) atoi(port);
+
 	return 0;
 }
