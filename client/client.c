@@ -50,6 +50,7 @@ int main (int argc, char *argv[]) {
 
 	switch (mode_client) {
 		case 0:
+			// Mode interractif
 			{
 			int *t_sock = malloc(sizeof(int *));
 			*t_sock = sock;
@@ -65,24 +66,33 @@ int main (int argc, char *argv[]) {
 			}
 			break;
 		case 1:
+			//Mode poblicateur
 			{
 			char buffer[LG_BUFFER];
-			int len_in;
-			while ((len_in = read(0, buffer, LG_BUFFER)) > 0) {
-				//fgets(buffer, LG_BUFFER, stdin);
-				
+			memset(buffer, '\000', LG_BUFFER);
+			int end_of_file = 0;
+			while (!end_of_file) {
+				fgets(buffer, LG_BUFFER, stdin);
+				// regarde si la fin du pipe est atteinte
+				if (buffer[strlen(buffer)-1] == '\000')
+					end_of_file = 1;
 				// supprime le caractère de fin de ligne
 				buffer[strlen(buffer)-1] = '\000';
-				printf("%s\n", buffer);
-				/*
+				//printf("%d %s\n", len_in, buffer);
 				write(sock, "p", LG_BUFFER);
 				char char_id_flux[LG_BUFFER];
 				sprintf(char_id_flux, "%d", flux_client);
 				write(sock, char_id_flux, LG_BUFFER);
 				write(sock, buffer, LG_BUFFER);
-				*/
+				//write(1, buffer, LG_BUFFER);
 				memset(buffer, '\000', LG_BUFFER);
 			}
+			}
+			break;
+		case 2:
+			// Mode abonné
+			{
+
 			}
 			break;
 		default:
