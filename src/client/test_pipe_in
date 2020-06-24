@@ -1,0 +1,7 @@
+client
+client.c
+client.o
+loremipsum
+Makefile
+test_pipe_in
+
