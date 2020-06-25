@@ -28,6 +28,11 @@ int create_main_socket (const short port) {
 		perror("socket");
 		return -1;
 	}
+	int optval = 1;
+	if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval)) < 0) {
+		perror("setsockopt");
+		return -1;
+	}
 
 	memset(& adresse, 0, sizeof (struct sockaddr_in));
 	adresse.sin_family = AF_INET;
