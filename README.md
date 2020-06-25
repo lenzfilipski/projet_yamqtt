@@ -38,7 +38,26 @@ Options
 	Cette option ne permet pas au client de publier.
 
 On peut utiliser les pipes stdin/stdout avec les options -f et -s.
-Si -f ou -s ne sont pas utilisés, le client s'exécute en mode interractif.
+Si -f ou -s ne sont pas utilisés, le client s'exécute en mode interactif.
+```
+
+### Mode interactif
+Le mode interactif permet de s'abonner à plusieurs flux et de publier sur plusieurs flux. On doit renseigner les données de chaque paquet tcp à envoyer sur une ligne. Pour envoyer des données comme décrit dans le protocole il faut donc 3 lignes.
+
+Le but du mode interactif est surtout de tester le bon fonctionnement du projet en ayant la possibilité de détailler le contenu de chaque packet envoyé. En utilisation normale, il est recommandé d'utiliser les modes abonné (option -s) et publicateur (optin -f).
+
+##### Exemples:
+abonement au flux 1:
+```
+s
+1
+.
+```
+publication sur le flux 42:
+```
+p
+42
+what is the universal awnser ?
 ```
 
 # Utilisation du serveur
