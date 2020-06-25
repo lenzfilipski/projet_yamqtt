@@ -22,19 +22,19 @@ Deux exécutables sont créés:
 ```
 Utilisation
 	client_yamqtt [-a adresse] [-p port]
-	client_yamqtt [-a adresse] [-p port] -f flux
-	client_yamqtt [-a adresse] [-p port] -s flux
+	client_yamqtt [-a adresse] [-p port] -f num_flux
+	client_yamqtt [-a adresse] [-p port] -s num_flux
 
 Options
 -a
 	l'adresse du serveur yamqtt. Utilise l'adresse 'localhost' par défaut.
 -p
 	le port du serveur yamqtt. Utilise le port 1884 par défaut.
--f
-	le flux sur lequel publier. Cette option ne permet au client de publier que sur un seul flux. 
+-f num_flux
+	le numéro du flux sur lequel publier compris entre 1 et 65535. Cette option ne permet au client de publier que sur un seul flux. 
 	Cette option ne permet pas au client de s'abonner à un ou des flux.
--s
-	le flux auquel s'abonner. Cette option ne permet au client de s'abonner qu'à un seul flux. 
+-s num_flux
+	le numéro du flux auquel s'abonner compris entre 1 et 65535. Cette option ne permet au client de s'abonner qu'à un seul flux. 
 	Cette option ne permet pas au client de publier.
 
 On peut utiliser les pipes stdin/stdout avec les options -f et -s.
