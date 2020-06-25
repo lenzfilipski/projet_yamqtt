@@ -114,8 +114,8 @@ void *handle_in_msg (void *t_sock) {
 		//printf("in: %c, ", action);
 
 		// Récupère le numéro de flux
-		char buf_id_flux[50];
-		memset(buf_id_flux, '\000', 50);
+		char buf_id_flux[LG_BUFFER];
+		memset(buf_id_flux, '\000', LG_BUFFER);
 		/*int len_id_flux = */read(sock, buf_id_flux, LG_BUFFER);
 		int id_flux = atoi(buf_id_flux);
 		//printf("%d, ", id_flux);
