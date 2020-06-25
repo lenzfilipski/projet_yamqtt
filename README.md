@@ -8,12 +8,22 @@ Les consignes sont accéssibles dans [CONSIGNES.md](./CONSIGNES.md).
 # Protocole
 Le protocole utilisé est décrit dans [yamqtt\_protocole.pdf](./yamqtt_protocole.pdf).
 
+# Construire et installer le projet
+- cd build
+- cmake ..
+- make
+- sudo make install
+
+Deux exécutables sont créés:
+- `serveur_yamqtt`
+- `client_yamqtt`
+
 # Utilisation du client
 ```
 Utilisation
-	client [-a adresse] [-p port]
-	client [-a adresse] [-p port] -f flux
-	client [-a adresse] [-p port] -s flux
+	client_yamqtt [-a adresse] [-p port]
+	client_yamqtt [-a adresse] [-p port] -f flux
+	client_yamqtt [-a adresse] [-p port] -s flux
 
 Options
 -a
@@ -34,7 +44,7 @@ Si -f ou -s ne sont pas utilisés, le client s'exécute en mode interractif.
 # Utilisation du serveur
 ```
 Utilisation
-	serveur [-p port]
+	serveur_yamqtt [-p port]
 
 Options
 -p
